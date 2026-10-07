@@ -19,6 +19,9 @@ public class TransaccionNfc {
     @Column(name = "id_bus")
     private Integer idBus;
 
+    @Column(name = "id_usuario")
+    private UUID idUsuario;
+
     private BigDecimal monto;
 
     @Column(name = "fecha_transaccion")
@@ -34,6 +37,7 @@ public class TransaccionNfc {
     private Boolean esEmergencia = false;
 
     public UUID getId() { return id; }
+    public UUID getIdUsuario() { return idUsuario; }
     public void setIdTarjeta(Integer v) { this.idTarjeta = v; }
     public void setIdBus(Integer v) { this.idBus = v; }
     public void setMonto(BigDecimal v) { this.monto = v; }

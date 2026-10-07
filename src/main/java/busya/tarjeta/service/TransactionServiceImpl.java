@@ -74,6 +74,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     private TransaccionNfc guardarTransaccion(PaymentDto dto, boolean esEmergencia) {
         TransaccionNfc tx = new TransaccionNfc();
+        tx.setIdUsuario(dto.getIdClient());
         tx.setIdTarjeta(dto.getIdCard());
         tx.setIdBus(dto.getIdDevice());
         tx.setMonto(dto.getAmount());
