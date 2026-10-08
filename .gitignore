@@ -35,3 +35,12 @@ out/
 
 ### VS Code ###
 .vscode/
+
+
+# Logs de Java / errores de JVM
+dumpstate_log.txt
+hs_err_pid*.log
+replay_pid*.log
+
+# Logs generales
+*.log
