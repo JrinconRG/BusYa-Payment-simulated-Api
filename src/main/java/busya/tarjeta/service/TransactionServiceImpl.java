@@ -37,46 +37,52 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    @Transactional
-    public PaymentResponseDto processPayment(PaymentDto dto) {
-        Tarjeta tarjeta = tarjetaRepository.findById(dto.getIdCard())
-                .orElseThrow(() -> new IllegalArgumentException("Tarjeta no encontrada"));
+@Transactional
+public PaymentResponseDto processPayment(PaymentDto dto) {
+    Tarjeta tarjeta = tarjetaRepository.findById(dto.getIdCard())
+            .orElseThrow(() -> new IllegalArgumentException("Tarjeta no encontrada"));
 
-        if (!tarjeta.getIdCliente().equals(dto.getIdClient())) {
-            throw new IllegalArgumentException("La tarjeta no pertenece a este usuario");
-        }
+    if (!tarjeta.getIdCliente().equals(dto.getIdClient())) {
+        throw new IllegalArgumentException("La tarjeta no pertenece a este usuario");
+    }
 
-        // 1. Intento de cobro principal
-        int filasActualizadas = tarjetaRepository.debitarSiHaySaldo(
-                dto.getIdCard(), dto.getIdClient(), dto.getAmount());
+    String marca = tarjeta.getMarca();
+    String ultimosCuatro = tarjeta.getUltimosCuatroDigitos();
 
-        if (filasActualizadas == 1) {
-            TransaccionNfc tx = guardarTransaccion(dto, false);
-            eventPublisher.publishEvent(new PaymentProcessedEvent(
-                    dto.getIdClient(), tx.getId(), TransactionStatus.SUCCESS));
-            return new PaymentResponseDto(TransactionStatus.SUCCESS, "Pago aprobado", tx.getId());
-        }
+    // 1. Intento de cobro principal
+    int filasActualizadas = tarjetaRepository.debitarSiHaySaldo(
+            dto.getIdCard(), dto.getIdClient(), dto.getAmount());
 
-        // 2. Pasaje de emergencia: el UPDATE condicional es atómico, solo un pago puede ganarlo
-        int emergenciaOtorgada = usuarioRepository.marcarPasajeEmergenciaUsado(dto.getIdClient());
-
-        if (emergenciaOtorgada == 1) {
-            TransaccionNfc tx = guardarTransaccion(dto, true);
-            eventPublisher.publishEvent(new PaymentProcessedEvent(
-                    dto.getIdClient(), tx.getId(), TransactionStatus.EMERGENCY_SUCCESS));
-            return new PaymentResponseDto(
-                    TransactionStatus.EMERGENCY_SUCCESS,
-                    "Cobrado utilizando el pasaje de emergencia disponible",
-                    tx.getId());
-        }
-
-        // 3. Rechazado: no se persiste transacción
+    if (filasActualizadas == 1) {
+        TransaccionNfc tx = guardarTransaccion(dto, false);
         eventPublisher.publishEvent(new PaymentProcessedEvent(
-        dto.getIdClient(), null, TransactionStatus.REJECTED));
+                dto.getIdClient(), tx.getId(), TransactionStatus.SUCCESS,
+                dto.getAmount(), dto.getIdDevice(), marca, ultimosCuatro));
+        return new PaymentResponseDto(TransactionStatus.SUCCESS, "Pago aprobado", tx.getId());
+    }
+
+    // 2. Pasaje de emergencia
+    int emergenciaOtorgada = usuarioRepository.marcarPasajeEmergenciaUsado(dto.getIdClient());
+
+    if (emergenciaOtorgada == 1) {
+        TransaccionNfc tx = guardarTransaccion(dto, true);
+        eventPublisher.publishEvent(new PaymentProcessedEvent(
+                dto.getIdClient(), tx.getId(), TransactionStatus.EMERGENCY_SUCCESS,
+                dto.getAmount(), dto.getIdDevice(), marca, ultimosCuatro));
         return new PaymentResponseDto(
-                TransactionStatus.REJECTED,
-                "Saldo insuficiente y pasaje de emergencia agotado",
-                null);
+                TransactionStatus.EMERGENCY_SUCCESS,
+                "Cobrado utilizando el pasaje de emergencia disponible",
+                tx.getId());
+    }
+
+    // 3. Rechazado
+    eventPublisher.publishEvent(new PaymentProcessedEvent(
+            dto.getIdClient(), null, TransactionStatus.REJECTED,
+            dto.getAmount(), dto.getIdDevice(), marca, ultimosCuatro));
+    return new PaymentResponseDto(
+            TransactionStatus.REJECTED,
+            "Saldo insuficiente y pasaje de emergencia agotado",
+            null);
 }
 
     private TransaccionNfc guardarTransaccion(PaymentDto dto, boolean esEmergencia) {

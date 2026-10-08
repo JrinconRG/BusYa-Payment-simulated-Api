@@ -27,4 +27,6 @@ public class Tarjeta {
     public Integer getId() { return id; }
     public UUID getIdCliente() { return idCliente; }
     public BigDecimal getSaldo() { return saldo; }
+    public String getMarca() { return marca; }
+    public String getUltimosCuatroDigitos() { return ultimosCuatroDigitos; }
 }

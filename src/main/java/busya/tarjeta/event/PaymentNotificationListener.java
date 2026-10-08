@@ -6,10 +6,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.Map;
 
 @Component
 public class PaymentNotificationListener {
+
+    private static final NumberFormat MONEDA =
+            NumberFormat.getIntegerInstance(Locale.forLanguageTag("es-CO"));
 
     private final NotificacionesClient notificaciones;
 
@@ -17,33 +22,30 @@ public class PaymentNotificationListener {
         this.notificaciones = notificaciones;
     }
 
-    // AFTER_COMMIT: solo se ejecuta si el pago quedó confirmado en la base de datos.
-    // @Async: el cobro no espera a que el microservicio de notificaciones responda.
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onPaymentProcessed(PaymentProcessedEvent event) {
+        String monto = "$" + MONEDA.format(event.monto());
+        String tarjeta = event.marca() + " •••• " + event.ultimosCuatro();
+
         switch (event.status()) {
             case SUCCESS -> notificaciones.enviar(
                     event.idUsuario(),
-                    "Pago exitoso",
-                    "Tu pasaje fue pagado",
+                    monto + " · Bus " + event.idBus(),
+                    tarjeta,
                     Map.of("tipo", "PAGO", "idTransaccion", event.idTransaccion().toString()));
 
             case EMERGENCY_SUCCESS -> notificaciones.enviar(
                     event.idUsuario(),
-                    "Pasaje de emergencia utilizado",
-                    "Tu saldo no alcanzaba y se usó tu pasaje de emergencia. Recarga tu tarjeta.",
+                    monto + " · Bus " + event.idBus(),
+                    "Pasaje de emergencia · " + tarjeta,
                     Map.of("tipo", "PAGO_EMERGENCIA", "idTransaccion", event.idTransaccion().toString()));
 
             case REJECTED -> notificaciones.enviar(
                     event.idUsuario(),
-                    "Pago rechazado",
-                    "Saldo insuficiente. Recarga tu tarjeta para poder viajar.",
+                    "Pago rechazado · " + monto,
+                    "Saldo insuficiente · " + tarjeta,
                     Map.of("tipo", "PAGO_RECHAZADO"));
-        
-                default -> {
-                    // No se envía notificación para otros estados.
-                }
-            }
         }
     }
+}
