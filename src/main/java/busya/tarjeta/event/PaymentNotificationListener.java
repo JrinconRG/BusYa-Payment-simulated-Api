@@ -1,3 +1,4 @@
+
 package busya.tarjeta.event;
 
 import busya.tarjeta.client.NotificacionesClient;
@@ -29,15 +30,12 @@ public class PaymentNotificationListener {
         String tarjeta = event.marca() + " •••• " + event.ultimosCuatro();
 
         switch (event.status()) {
-            case SUCCESS -> notificaciones.enviar(
-                event.idUsuario(),
-                "Pago exitoso · " + monto + " · Bus " + event.idBus() + " · " + tarjeta,
-                tarjeta,
-                Map.of(
-                        "tipo", "PAGO",
-                        "idTransaccion", event.idTransaccion().toString()
-                )
-);
+           case SUCCESS -> notificaciones.enviar(
+                event.idUsuario(),                       // 1. UUID
+                "Pago exitoso · " + monto + " · Bus " + event.idBus(),       // 2. título
+                tarjeta,                                 // 3. cuerpo
+                Map.of("tipo", "PAGO",                   // 4. data
+                    "idTransaccion", event.idTransaccion().toString()));
 
             case EMERGENCY_SUCCESS -> notificaciones.enviar(
                     event.idUsuario(),
@@ -45,11 +43,19 @@ public class PaymentNotificationListener {
                     "Pasaje de emergencia · " + tarjeta,
                     Map.of("tipo", "PAGO_EMERGENCIA", "idTransaccion", event.idTransaccion().toString()));
 
+            case EMERGENCY_PAID -> notificaciones.enviar(
+                    event.idUsuario(),
+                    "Pasaje de emergencia pagado · " + monto,
+                    tarjeta,
+                    Map.of("tipo", "PAGO_EMERGENCIA_SALDADO", "idTransaccion", event.idTransaccion().toString()));
+
             case REJECTED -> notificaciones.enviar(
                     event.idUsuario(),
                     "Pago rechazado · " + monto,
                     "Saldo insuficiente · " + tarjeta,
                     Map.of("tipo", "PAGO_RECHAZADO"));
+
+            default -> { }
         }
     }
 }

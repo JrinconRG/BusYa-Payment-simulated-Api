@@ -16,4 +16,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
         AND (u.pasajeEmergenciaUsado = false OR u.pasajeEmergenciaUsado IS NULL)
         """)
     int marcarPasajeEmergenciaUsado(@Param("idUsuario") UUID idUsuario);
-}
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Usuario u SET u.pasajeEmergenciaUsado = false WHERE u.id = :idUsuario")
+    int liberarPasajeEmergencia(@Param("idUsuario") UUID idUsuario);
+    }

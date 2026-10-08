@@ -1,5 +1,5 @@
 package busya.tarjeta.model;
 
 public enum TransactionStatus {
-    SUCCESS, EMERGENCY_SUCCESS, REJECTED
+    SUCCESS, EMERGENCY_SUCCESS, REJECTED, EMERGENCY_PAID,DEBT_PENDING
 }
