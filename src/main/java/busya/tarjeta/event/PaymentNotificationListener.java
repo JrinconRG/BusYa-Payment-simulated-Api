@@ -20,7 +20,7 @@ public class PaymentNotificationListener {
     // AFTER_COMMIT: solo se ejecuta si el pago quedó confirmado en la base de datos.
     // @Async: el cobro no espera a que el microservicio de notificaciones responda.
     @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onPaymentProcessed(PaymentProcessedEvent event) {
         switch (event.status()) {
             case SUCCESS -> notificaciones.enviar(
@@ -35,7 +35,15 @@ public class PaymentNotificationListener {
                     "Tu saldo no alcanzaba y se usó tu pasaje de emergencia. Recarga tu tarjeta.",
                     Map.of("tipo", "PAGO_EMERGENCIA", "idTransaccion", event.idTransaccion().toString()));
 
-            default -> { } // REJECTED no se notifica por ahora
+            case REJECTED -> notificaciones.enviar(
+                    event.idUsuario(),
+                    "Pago rechazado",
+                    "Saldo insuficiente. Recarga tu tarjeta para poder viajar.",
+                    Map.of("tipo", "PAGO_RECHAZADO"));
+        
+                default -> {
+                    // No se envía notificación para otros estados.
+                }
+            }
         }
     }
-}

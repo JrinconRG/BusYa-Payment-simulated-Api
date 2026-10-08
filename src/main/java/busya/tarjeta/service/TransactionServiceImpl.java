@@ -71,6 +71,8 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         // 3. Rechazado: no se persiste transacción
+        eventPublisher.publishEvent(new PaymentProcessedEvent(
+        dto.getIdClient(), null, TransactionStatus.REJECTED));
         return new PaymentResponseDto(
                 TransactionStatus.REJECTED,
                 "Saldo insuficiente y pasaje de emergencia agotado",
