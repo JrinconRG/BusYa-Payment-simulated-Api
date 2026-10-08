@@ -30,10 +30,14 @@ public class PaymentNotificationListener {
 
         switch (event.status()) {
             case SUCCESS -> notificaciones.enviar(
-                    event.idUsuario(),
-                    monto + " · Bus " + event.idBus(),
-                    tarjeta,
-                    Map.of("tipo", "PAGO", "idTransaccion", event.idTransaccion().toString()));
+                event.idUsuario(),
+                "Pago exitoso · " + monto + " · Bus " + event.idBus() + " · " + tarjeta,
+                tarjeta,
+                Map.of(
+                        "tipo", "PAGO",
+                        "idTransaccion", event.idTransaccion().toString()
+                )
+);
 
             case EMERGENCY_SUCCESS -> notificaciones.enviar(
                     event.idUsuario(),
