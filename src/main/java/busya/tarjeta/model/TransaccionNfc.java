@@ -46,4 +46,5 @@ public class TransaccionNfc {
     public void setLatitud(Double v) { this.latitud = v; }
     public void setLongitud(Double v) { this.longitud = v; }
     public void setEsEmergencia(Boolean v) { this.esEmergencia = v; }
+    public void setIdUsuario(UUID v) { this.idUsuario = v; } 
 }
