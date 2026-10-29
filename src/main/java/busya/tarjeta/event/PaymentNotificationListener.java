@@ -34,6 +34,12 @@ public class PaymentNotificationListener {
                                         "Pago exitoso · " + monto + " · Bus " + event.idBus(),
                                         tarjeta,
                                         Map.of("tipo", "PAGO", "idTransaccion", event.idTransaccion().toString()));
+                        case ECO_PASS_SUCCESS -> notificaciones.enviar(
+                                        event.idUsuario(),
+                                        "¡Viaje gratis con tu pasaje Eco! · Bus " + event.idBus(),
+                                        "No se cobró nada a tu tarjeta · " + tarjeta,
+                                        Map.of("tipo", "PAGO_PASAJE_ECO", "idTransaccion",
+                                                        event.idTransaccion().toString()));
 
                         case EMERGENCY_SUCCESS -> notificaciones.enviar(
                                         event.idUsuario(),

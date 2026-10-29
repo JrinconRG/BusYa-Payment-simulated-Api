@@ -101,8 +101,22 @@ public class TransactionServiceImpl implements TransactionService {
                                 .findFirstByIdUsuarioAndEsEmergenciaTrueAndEmergenciaPagadaFalseOrderByFechaTransaccionAsc(
                                                 dto.getIdClient());
 
+                // Con deuda de emergencia pendiente primero se paga la deuda:
+                // no se puede usar el pasaje Eco.
                 if (pendiente.isPresent()) {
                         return pagarConDeuda(dto, pendiente.get(), marca, ultimosCuatro);
+                }
+
+                // Pasaje Eco gratis: un solo UPDATE atomico por PK (0 filas si no tiene).
+                // Corre en esta transaccion: si falla el guardado, el pasaje se devuelve solo.
+                if (usuarioRepository.consumirPasajeEco(dto.getIdClient()) == 1) {
+                        TransaccionNfc tx = guardarTransaccion(dto, false, BigDecimal.ZERO);
+                        eventPublisher.publishEvent(new PaymentProcessedEvent(
+                                        dto.getIdClient(), tx.getId(), TransactionStatus.ECO_PASS_SUCCESS,
+                                        BigDecimal.ZERO, dto.getIdDevice(), marca, ultimosCuatro));
+                        return new PaymentResponseDto(TransactionStatus.ECO_PASS_SUCCESS,
+                                        "Viaje gratis con tu pasaje Eco", tx.getId(),
+                                        BigDecimal.ZERO, false, false, null);
                 }
 
                 // 1. Cobro normal
@@ -171,11 +185,15 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         private TransaccionNfc guardarTransaccion(PaymentDto dto, boolean esEmergencia) {
+                return guardarTransaccion(dto, esEmergencia, dto.getAmount());
+        }
+
+        private TransaccionNfc guardarTransaccion(PaymentDto dto, boolean esEmergencia, BigDecimal monto) {
                 TransaccionNfc tx = new TransaccionNfc();
                 tx.setIdUsuario(dto.getIdClient());
                 tx.setIdTarjeta(dto.getIdCard());
                 tx.setIdBus(dto.getIdDevice());
-                tx.setMonto(dto.getAmount());
+                tx.setMonto(monto); // viaje con pasaje Eco: monto 0
                 tx.setFechaTransaccion(OffsetDateTime.now(ZoneOffset.UTC));
                 tx.setSincronizadoOffline(false);
                 tx.setLatitud(dto.getLatitud());

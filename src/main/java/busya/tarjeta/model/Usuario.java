@@ -12,8 +12,22 @@ public class Usuario {
 
     @Column(name = "pasaje_emergencia_usado")
     private Boolean pasajeEmergenciaUsado;
+    @Column(name = "pasajes_eco_gratis", nullable = false)
+    private int pasajesEcoGratis;
 
-    public UUID getId() { return id; }
-    public Boolean getPasajeEmergenciaUsado() { return pasajeEmergenciaUsado; }
-    public void setPasajeEmergenciaUsado(Boolean v) { this.pasajeEmergenciaUsado = v; }
+    public UUID getId() {
+        return id;
+    }
+
+    public Boolean getPasajeEmergenciaUsado() {
+        return pasajeEmergenciaUsado;
+    }
+
+    public int getPasajesEcoGratis() {
+        return pasajesEcoGratis;
+    }
+
+    public void setPasajeEmergenciaUsado(Boolean v) {
+        this.pasajeEmergenciaUsado = v;
+    }
 }
